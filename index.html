@@ -443,11 +443,95 @@
                 margin-bottom: 3px;
             }
         }
+
+        /* ===== 高端弹窗 ===== */
+
+.vip-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999999;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(8px);
+    justify-content: center;
+    align-items: center;
+}
+
+.vip-modal-box {
+    width: 340px;
+    padding: 30px;
+    border-radius: 20px;
+    background: linear-gradient(145deg,#111,#1c1c1c);
+    box-shadow: 0 0 40px rgba(0,150,255,0.4);
+    text-align: center;
+    animation: vipPop .3s ease;
+}
+
+.vip-title {
+    color: #fff;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.vip-sub {
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+.vip-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    background: #222;
+    cursor: pointer;
+    transition: 0.3s;
+    color: #fff;
+}
+
+.vip-line:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px #0099ff;
+}
+
+.vip-line.fastest {
+    background: linear-gradient(45deg,#00c6ff,#0072ff);
+    box-shadow: 0 0 20px #00c6ff;
+}
+
+.vip-status {
+    font-size: 12px;
+    opacity: .8;
+}
+
+.vip-close {
+    margin-top: 15px;
+    color: #888;
+    cursor: pointer;
+}
+
+@keyframes vipPop {
+    from {transform: scale(.8); opacity:0;}
+    to {transform: scale(1); opacity:1;}
+}
     </style>
     <link href="./files/annie.css" rel="stylesheet" />
     <link href="./files/app.css?v=20251003" rel="stylesheet" />
 </head>
+<!-- 高端线路弹窗 -->
+<div id="lineModal" class="vip-modal">
+    <div class="vip-modal-box">
+        <div class="vip-title">智能选择访问线路</div>
+        <div class="vip-sub">系统自动测速 · 推荐最快线路</div>
 
+        <div id="lineContainer"></div>
+
+        <div class="vip-close" onclick="closeLineModal()">取消</div>
+    </div>
+</div>
 <body inmaintabuse="1" style="zoom: 1;">
     <div data-v-app="" id="app">
         <div>
@@ -518,7 +602,7 @@
                                     <section class="panel panel-hub">
                                         <div class="panel-title"><span class="pill">玩家聚集地</span></div>
                                         <div class="grid hub-grid">
-                                            <a class="grid-item" href="https://lmds58.cc/#/?i=222"><img alt="app1"
+                                            <a class="grid-item" href="javascript:void(0);" onclick="openLineModal()"><img alt="app1"
                                                     src="./Public/uploads/ds.png" />
                                                 <p class="title">大神app</p>
                                             </a>
@@ -661,6 +745,88 @@
             showToast._timer = setTimeout(() => t.classList.remove('show'), 12000);
         }
     </script>
+
+    <script>
+const lines = [
+    {name: "线路1", url: "https://lmds58.cc/#/?i=222"},
+    {name: "线路2", url: "https://lmds288.cc/#/?i=222"},
+    {name: "线路3", url: "https://lmds07.cc/#/?i=222"}
+];
+
+function openLineModal() {
+    document.getElementById("lineModal").style.display = "flex";
+    renderLines();
+    testAllLines();
+}
+
+function closeLineModal() {
+    document.getElementById("lineModal").style.display = "none";
+}
+
+function renderLines() {
+    const container = document.getElementById("lineContainer");
+    container.innerHTML = "";
+
+    lines.forEach((line, index) => {
+        const div = document.createElement("div");
+        div.className = "vip-line";
+        div.id = "line-"+index;
+        div.innerHTML = `
+            <span>${line.name}</span>
+            <span class="vip-status">测速中...</span>
+        `;
+        div.onclick = () => window.location.href = line.url;
+        container.appendChild(div);
+    });
+}
+
+function testAllLines() {
+    let fastestTime = Infinity;
+    let fastestIndex = -1;
+
+    lines.forEach((line, index) => {
+        const start = Date.now();
+
+        fetch(line.url, {mode:'no-cors'})
+        .then(() => {
+            const time = Date.now() - start;
+            updateLineStatus(index, time);
+            if(time < fastestTime){
+                fastestTime = time;
+                fastestIndex = index;
+                highlightFastest(fastestIndex);
+            }
+        })
+        .catch(() => {
+            updateLineStatus(index, null);
+        });
+    });
+}
+
+function updateLineStatus(index, time){
+    const el = document.querySelector("#line-"+index+" .vip-status");
+    if(time === null){
+        el.innerText = "超时";
+        el.style.color = "#ff4d4d";
+    }else{
+        el.innerText = time + " ms";
+        el.style.color = time < 800 ? "#00ff99" : "#ffaa00";
+    }
+}
+
+function highlightFastest(index){
+    document.querySelectorAll(".vip-line").forEach(el=>el.classList.remove("fastest"));
+    document.getElementById("line-"+index).classList.add("fastest");
+}
+
+// 点击遮罩关闭
+window.onclick = function(e){
+    const modal = document.getElementById("lineModal");
+    if(e.target === modal){
+        modal.style.display = "none";
+    }
+}
+</script>
 
 </body>
 
